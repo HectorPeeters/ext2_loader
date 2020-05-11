@@ -1,0 +1,1 @@
+genext2fs -b 1024 -d fs disk.img
