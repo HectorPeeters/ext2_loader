@@ -19,7 +19,7 @@ int main(int argc, char **argv)
 
     struct Inode *inode = ext2_read_inode(fs, 2);
     ext2_print_inode_info(inode);
-    ext2_read_dir_entry(fs, inode->direct_block_pointers[0]);
+    ext2_read_dir_entries(fs, inode->direct_block_pointers[0]);
 
     ext2_destroy(fs);
 

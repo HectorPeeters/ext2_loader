@@ -139,6 +139,16 @@ void ext2_print_inode_info(struct Inode *inode)
     printf("\n\n");
 }
 
+void ext2_print_inode_dir_info(struct InodeDirEntry *dir_entry)
+{
+    printf("Inode Dir Entry\n");
+    printf("\tInode: %d\n", dir_entry->inode);
+    printf("\tSize: %d\n", dir_entry->size);
+    printf("\tName length: %d\n", dir_entry->name_length);
+    printf("\tType: %d\n", dir_entry->type);
+    printf("\tName: %s\n\n", dir_entry->name);
+}
+
 uint32 ext2_get_group_count(struct Ext2Fs *fs)
 {
     return (fs->super_block->block_count + (fs->super_block->group_block_count - 1)) / fs->super_block->group_block_count;
@@ -168,7 +178,7 @@ struct Inode *ext2_read_inode(struct Ext2Fs *fs, uint32 inode_index)
     return inode;
 }
 
-struct InodeDirEntry *ext2_read_dir_entry(struct Ext2Fs *fs, uint32 block)
+struct InodeDirEntry *ext2_read_dir_entries(struct Ext2Fs *fs, uint32 block)
 {
     uint32 block_size = ext2_get_block_size(fs);
 
@@ -181,8 +191,7 @@ struct InodeDirEntry *ext2_read_dir_entry(struct Ext2Fs *fs, uint32 block)
     while (total_size < block_size)
     {
         fread(entry, sizeof(struct InodeDirEntry), 1, fs->file);
-        printf("%s, size: ", entry->name);
-        printf("%d\n", entry->size);
+        ext2_print_inode_dir_info(entry);
         total_size += entry->size;
         fseek(fs->file, -(sizeof(struct InodeDirEntry) - entry->size), SEEK_CUR);
     }
