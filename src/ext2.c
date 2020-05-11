@@ -178,21 +178,38 @@ struct Inode *ext2_read_inode(struct Ext2Fs *fs, uint32 inode_index)
     return inode;
 }
 
-struct InodeDirEntry *ext2_read_dir_entries(struct Ext2Fs *fs, uint32 block)
+struct InodeDirEntry **ext2_read_dir_entries(struct Ext2Fs *fs, uint32 block)
 {
     uint32 block_size = ext2_get_block_size(fs);
 
-    uint32 total_size = 0;
+    struct InodeDirEntry **result = (struct InodeDirEntry **)malloc(sizeof(struct InodeDirEntry *) * block_size / EXT2_MIN_INODE_DIR_ENTRY_SIZE);
 
-    struct InodeDirEntry *entry = (struct InodeDirEntry *)malloc(sizeof(struct InodeDirEntry));
+    uint32 total_size = 0;
 
     fseek(fs->file, block * block_size, SEEK_SET);
 
+    uint8 index = 0;
     while (total_size < block_size)
     {
+        struct InodeDirEntry *entry = (struct InodeDirEntry *)malloc(sizeof(struct InodeDirEntry));
         fread(entry, sizeof(struct InodeDirEntry), 1, fs->file);
-        ext2_print_inode_dir_info(entry);
+
+        result[index++] = entry;
+
         total_size += entry->size;
         fseek(fs->file, -(sizeof(struct InodeDirEntry) - entry->size), SEEK_CUR);
     }
+
+    return result;
+}
+
+uint8 *ext2_read_block_data(struct Ext2Fs *fs, uint32 block)
+{
+    uint32 block_size = ext2_get_block_size(fs);
+    uint8 *buffer = (uint8 *)malloc(sizeof(uint8) * block_size);
+    fseek(fs->file, block * block_size, SEEK_SET);
+
+    fread(buffer, sizeof(uint8), block_size, fs->file);
+
+    return buffer;
 }

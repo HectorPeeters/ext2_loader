@@ -6,6 +6,7 @@
 
 #define EXT2_SUPERBLOCK_SIZE 1024
 #define EXT2_BLOCK_GROUP_DESCRIPTOR_SIZE 32
+#define EXT2_MIN_INODE_DIR_ENTRY_SIZE 64
 
 #define EXT2_ROOT_INODE 2
 
@@ -154,14 +155,13 @@ struct __attribute__((__packed__)) Ext2Fs
 };
 
 struct Ext2Fs *ext2_create(const char *path);
-
 void ext2_destroy(struct Ext2Fs *fs);
 
 uint8 ext2_verify(struct Ext2Fs *fs);
 
 void ext2_print_info(struct Ext2Fs *fs);
-
 void ext2_print_inode_info(struct Inode *inode);
+void ext2_print_inode_dir_info(struct InodeDirEntry *dir_entry);
 
 uint32 ext2_get_group_count(struct Ext2Fs *fs);
 
@@ -170,4 +170,6 @@ uint32 ext2_get_block_size(struct Ext2Fs *fs);
 uint32 ext2_get_fragment_size(struct Ext2Fs *fs);
 
 struct Inode *ext2_read_inode(struct Ext2Fs *fs, uint32 inode_index);
-struct InodeDirEntry * ext2_read_dir_entries(struct Ext2Fs *fs, uint32 block);
+struct InodeDirEntry **ext2_read_dir_entries(struct Ext2Fs *fs, uint32 block);
+
+uint8 *ext2_read_block_data(struct Ext2Fs *fs, uint32 block);

@@ -17,19 +17,35 @@ int main(int argc, char **argv)
 
     ext2_print_info(fs);
 
-    struct Inode *inode = ext2_read_inode(fs, 2);
-    ext2_print_inode_info(inode);
-    ext2_read_dir_entries(fs, inode->direct_block_pointers[0]);
+    struct Inode *root_inode = ext2_read_inode(fs, EXT2_ROOT_INODE);
+    ext2_print_inode_info(root_inode);
+    struct InodeDirEntry **dir_entries = ext2_read_dir_entries(fs, root_inode->direct_block_pointers[0]);
+
+    uint8 i;
+    while (1)
+    {
+        struct InodeDirEntry *entry = dir_entries[i++];
+        if (entry == 0)
+            break;
+
+        ext2_print_inode_dir_info(entry);
+
+        if (entry->name[0] != '.')
+        {
+            struct Inode *in = ext2_read_inode(fs, entry->inode);            
+
+            uint8* data = ext2_read_block_data(fs, in->direct_block_pointers[0]);
+            printf("%s\n", data);
+
+            free(in);
+        }
+
+        free(entry);
+    }
+
+    free(dir_entries);
+
+    free(root_inode);
 
     ext2_destroy(fs);
-
-    // printf("\nBlock size: %d\n", ext2_get_block_size(&fs));
-
-    // int inode = EXT2_ROOT_INODE;
-    // int block_group = ext2_get_inode_block_group(&fs, inode);
-    // printf("\nBlock group: %d\n", block_group);
-    // int block_group_index = ext2_get_inode_block_group_index(&fs, inode);
-    // printf("Block group index: %d\n", block_group_index);
-
-    // free(buffer);
 }
