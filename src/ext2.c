@@ -3,17 +3,33 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+static int allocations = 0;
+
+#ifdef DEBUG
+#define ALLOC(x)   \
+    malloc(x);     \
+    allocations++; \
+    printf("Allocated %ld bytes\n", x);
+#define FREE(x)    \
+    free(x);       \
+    allocations--; \
+    printf("Deallocated!\n");
+#else
+#define ALLOC(x) malloc(x);
+#define FREE(x) free(x);
+#endif
+
 struct Ext2Fs *ext2_create(const char *path)
 {
-    struct Ext2Fs *fs = malloc(sizeof(struct Ext2Fs));
+    struct Ext2Fs *fs = ALLOC(sizeof(struct Ext2Fs));
 
     fs->file = fopen(path, "rb");
 
-    fs->super_block = malloc(sizeof(struct SuperBlock));
+    fs->super_block = ALLOC(sizeof(struct SuperBlock));
     fseek(fs->file, 1024, SEEK_SET);
     fread(fs->super_block, sizeof(struct SuperBlock), 1, fs->file);
 
-    fs->block_group_descriptor = malloc(sizeof(struct BlockGroupDescriptor));
+    fs->block_group_descriptor = ALLOC(sizeof(struct BlockGroupDescriptor));
     fseek(fs->file, 1024 + ext2_get_block_size(fs), SEEK_SET);
     fread(fs->block_group_descriptor, sizeof(struct BlockGroupDescriptor), 1, fs->file);
 
@@ -24,9 +40,13 @@ void ext2_destroy(struct Ext2Fs *fs)
 {
     fclose(fs->file);
 
-    free(fs->super_block);
-    free(fs->block_group_descriptor);
-    free(fs);
+    FREE(fs->super_block);
+    FREE(fs->block_group_descriptor);
+    FREE(fs);
+
+#ifdef DEBUG
+    printf("%d allocations left\n", allocations);
+#endif
 }
 
 uint8 ext2_verify(struct Ext2Fs *fs)
@@ -172,7 +192,7 @@ struct Inode *ext2_read_inode(struct Ext2Fs *fs, uint32 inode_index)
 
     fseek(fs->file, inode_table_block_number * ext2_get_block_size(fs) + group_index * sizeof(struct Inode), SEEK_SET);
 
-    struct Inode *inode = (struct Inode *)malloc(sizeof(struct Inode));
+    struct Inode *inode = (struct Inode *)ALLOC(sizeof(struct Inode));
     fread(inode, sizeof(struct Inode), 1, fs->file);
 
     return inode;
@@ -182,7 +202,7 @@ struct InodeDirEntry **ext2_read_dir_entries(struct Ext2Fs *fs, uint32 block)
 {
     uint32 block_size = ext2_get_block_size(fs);
 
-    struct InodeDirEntry **result = (struct InodeDirEntry **)malloc(sizeof(struct InodeDirEntry *) * block_size / EXT2_MIN_INODE_DIR_ENTRY_SIZE);
+    struct InodeDirEntry **result = (struct InodeDirEntry **)ALLOC(sizeof(struct InodeDirEntry *) * block_size / EXT2_MIN_INODE_DIR_ENTRY_SIZE);
 
     uint32 total_size = 0;
 
@@ -191,7 +211,7 @@ struct InodeDirEntry **ext2_read_dir_entries(struct Ext2Fs *fs, uint32 block)
     uint8 index = 0;
     while (total_size < block_size)
     {
-        struct InodeDirEntry *entry = (struct InodeDirEntry *)malloc(sizeof(struct InodeDirEntry));
+        struct InodeDirEntry *entry = (struct InodeDirEntry *)ALLOC(sizeof(struct InodeDirEntry));
         fread(entry, sizeof(struct InodeDirEntry), 1, fs->file);
 
         result[index++] = entry;
@@ -203,13 +223,18 @@ struct InodeDirEntry **ext2_read_dir_entries(struct Ext2Fs *fs, uint32 block)
     return result;
 }
 
-uint8 *ext2_read_block_data(struct Ext2Fs *fs, uint32 block)
+uint8 *ext2_read_block_data(struct Ext2Fs *fs, uint32 block, uint32 size)
 {
     uint32 block_size = ext2_get_block_size(fs);
-    uint8 *buffer = (uint8 *)malloc(sizeof(uint8) * block_size);
+    uint8 *buffer = (uint8 *)ALLOC(sizeof(uint8) * size);
     fseek(fs->file, block * block_size, SEEK_SET);
 
-    fread(buffer, sizeof(uint8), block_size, fs->file);
+    fread(buffer, sizeof(uint8), size, fs->file);
 
     return buffer;
+}
+
+void ext2_free(void *data)
+{
+    FREE(data);
 }

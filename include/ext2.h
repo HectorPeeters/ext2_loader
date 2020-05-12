@@ -172,4 +172,6 @@ uint32 ext2_get_fragment_size(struct Ext2Fs *fs);
 struct Inode *ext2_read_inode(struct Ext2Fs *fs, uint32 inode_index);
 struct InodeDirEntry **ext2_read_dir_entries(struct Ext2Fs *fs, uint32 block);
 
-uint8 *ext2_read_block_data(struct Ext2Fs *fs, uint32 block);
+uint8 *ext2_read_block_data(struct Ext2Fs *fs, uint32 block, uint32 size);
+
+void ext2_free(void* data);

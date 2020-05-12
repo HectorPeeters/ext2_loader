@@ -6,8 +6,6 @@
 
 int main(int argc, char **argv)
 {
-    printf("SuperBlock size: %ld\n", sizeof(struct SuperBlock));
-
     struct Ext2Fs *fs = ext2_create("disk.img");
 
     if (ext2_verify(fs))
@@ -34,18 +32,19 @@ int main(int argc, char **argv)
         {
             struct Inode *in = ext2_read_inode(fs, entry->inode);            
 
-            uint8* data = ext2_read_block_data(fs, in->direct_block_pointers[0]);
+            uint8* data = ext2_read_block_data(fs, in->direct_block_pointers[0], in->lower_bits_size);
             printf("%s\n", data);
 
-            free(in);
+            ext2_free(data);
+            ext2_free(in);
         }
 
-        free(entry);
+        ext2_free(entry);
     }
 
-    free(dir_entries);
+    ext2_free(dir_entries);
 
-    free(root_inode);
+    ext2_free(root_inode);
 
     ext2_destroy(fs);
 }

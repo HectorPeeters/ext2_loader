@@ -4,6 +4,7 @@ workspace "Ext2"
 	configurations { "Debug", "Release" }
 	
 	filter { "configurations:Debug" }
+		defines { "DEBUG" }
 		symbols "On"
 	
 	filter { "configurations:Release" }
